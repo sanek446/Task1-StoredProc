@@ -1,5 +1,9 @@
-﻿CREATE PROCEDURE [dbo].[SP1]
+﻿CREATE PROCEDURE [dbo].[insertSP]
 
+@valuesString nvarchar(250)
+	
 AS
-	SELECT * from [dbo].Machine
+INSERT INTO [dbo].Machine VALUES (@valuesString)
+
+	
 RETURN 0

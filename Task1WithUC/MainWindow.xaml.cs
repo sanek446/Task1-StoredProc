@@ -32,7 +32,14 @@ namespace Task1WithUC
         public string str;
         private void button1_Click(object sender, RoutedEventArgs e)
         {
-            MyUC.getData(textBox.Text, textBox1.Text);
+            MyUC.selectSpName = textBox1.Text;
+            MyUC.deleteSpName = textBox3.Text;
+            MyUC.insertSpName = textBox4.Text;
+            MyUC.updateSpName = textBox5.Text;
+
+
+            MyUC.getData(textBox.Text);
+            
         }
 
         private void button2_Click(object sender, RoutedEventArgs e)

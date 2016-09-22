@@ -30,7 +30,6 @@ namespace Task1WithUC
 
         string serverConn = "";
         SqlConnection connection;        
-        string tableName = "";        
         List<string> headerNames = new List<string>();
         List<string> headerTypes = new List<string>();
         int i, j;
@@ -42,6 +41,11 @@ namespace Task1WithUC
         private ObservableCollection<CheckedListItem<string>> customerFilters = new ObservableCollection<CheckedListItem<string>>();
         private CollectionViewSource viewSource = new CollectionViewSource();        
         private ObservableCollection<CheckedListItem<string>>[] filterArray = new ObservableCollection<CheckedListItem<string>>[50];
+
+        public string selectSpName;
+        public string deleteSpName;
+        public string insertSpName;
+        public string updateSpName;
 
         public UC()
         {
@@ -72,7 +76,7 @@ namespace Task1WithUC
             dataGrid.FontFamily = new FontFamily(font);
         }
                 
-        public void getData(string conString, string storedProcedure)
+        public void getData(string conString)
         {
             serverConn = conString;
             if (serverConn == "")
@@ -93,14 +97,7 @@ namespace Task1WithUC
                     SqlCommand cmd = new SqlCommand();
                     SqlDataReader reader;
 
-                    //how to get table/tables name???
-                    tableName = getTableName("select * from table");
-                    // if (tableName == "")
-                    //    return;
-                    tableName = "tableName";
-
-
-                    cmd.CommandText = storedProcedure;
+                    cmd.CommandText = selectSpName;
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Connection = connection;
 
@@ -175,9 +172,97 @@ namespace Task1WithUC
 
         }
 
-        public void returnData(string someString)
-        {            
-            Console.WriteLine(someString);
+        public void deleteSp(string SpName, string ID)
+        {
+
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(serverConn);
+            using (connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    SqlCommand cmd = new SqlCommand();
+                    SqlDataReader reader;
+
+                    cmd.CommandText = SpName;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@ID", ID);
+                    cmd.Connection = connection;
+
+                    reader = cmd.ExecuteReader();                  
+                    reader.Close();                   
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+
+
+        }
+
+        public void updateSp(string SpName, string fieldName, string fieldValue, string ID)
+        {
+
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(serverConn);
+            using (connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    SqlCommand cmd = new SqlCommand();
+                    SqlDataReader reader;
+
+                    cmd.CommandText = SpName;
+                    cmd.CommandType = CommandType.StoredProcedure;                    
+                    cmd.Parameters.AddWithValue("@fieldName", fieldName);
+                    cmd.Parameters.AddWithValue("@fieldValue", fieldValue);
+                    cmd.Parameters.AddWithValue("@ID", ID);
+                    cmd.Connection = connection;
+
+                    reader = cmd.ExecuteReader();
+                    reader.Close();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+
+
+        }
+
+        public void insertSp(string SpName, string valuesString)
+        {
+
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(serverConn);
+            using (connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    SqlCommand cmd = new SqlCommand();
+                    SqlDataReader reader;
+
+                    cmd.CommandText = SpName;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@valuesString", valuesString);                    
+                    cmd.Connection = connection;
+
+                    reader = cmd.ExecuteReader();
+                    reader.Close();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
         }
 
         private void Button_Filter_Click(object sender, RoutedEventArgs e)
@@ -190,30 +275,6 @@ namespace Task1WithUC
             popCountry.IsOpen = true;
         }
              
-        private string getTableName(string strCommand, string word = "FROM")
-        {
-            //get list of all tables from DB
-            DataTable tbls = connection.GetSchema("Tables");
-
-            if (word == "UPDATE")
-                word = word + " ";
-            else
-                word = " " + word + " ";
-
-            string parsedTableName = strCommand.ToLower().Substring(strCommand.ToLower().IndexOf(word.ToLower())).Split(new char[0], StringSplitOptions.RemoveEmptyEntries)[1];
-
-            foreach (DataRow row in tbls.Rows)
-            {
-                //take the table name                        
-                tableName = row["TABLE_NAME"].ToString();
-                if (tableName.ToLower() == parsedTableName.ToLower())
-                    return tableName;
-            }
-
-            Console.WriteLine("There is no such table");
-            return "";
-        }
-
         private void buttonChoose_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
@@ -273,12 +334,9 @@ namespace Task1WithUC
 
                     //delete last comma
                     conditionStr = conditionStr.Substring(0, conditionStr.Length - 2);
-                                        
-                    returnData("INSERT INTO " + tableName + " VALUES (" + conditionStr + ")");                   
-                }
 
-              // dataGrid.ItemsSource = table.DefaultView;
-                            
+                    insertSp(insertSpName, conditionStr);
+                }
                 
                 xlWorkBook.Close(true, misValue, misValue);
                 xlApp.Quit();
@@ -352,7 +410,7 @@ namespace Task1WithUC
                         var row = table.Rows[dataGrid.SelectedIndex];
 
                         //delete from DB                
-                        returnData("DELETE FROM " + tableName + " WHERE " + table.Columns[0].ToString() + " = " + row[0].ToString());
+                        deleteSp(deleteSpName, row[0].ToString());
 
                         //delete from dataGrid
                         table.Rows.RemoveAt(dataGrid.SelectedIndex);
@@ -397,7 +455,7 @@ namespace Task1WithUC
             }
             
             conditionStr = key + "='" + value + "' WHERE " + headerNames[0] + "='" + row[0].ToString() + "'";
-            returnData("UPDATE " + tableName + " SET " + conditionStr);            
+            updateSp(updateSpName, key, value, row[0].ToString());            
         }
 
         private void comboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
