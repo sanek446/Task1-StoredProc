@@ -67,3 +67,21 @@ SET @sql = 'INSERT INTO [dbo].Machine VALUES (' + @valuesString + ')'
 exec @sql
 INSERT INTO [dbo].Machine VALUES ('31', 'MAZ123', 'MAZAK Vortex 150', '175200.26', '2010-11-18 00:00:00', '2010-11-18 00:00:00', 'True')
 RETURN 0
+==========================================
+CREATE PROCEDURE [dbo].[updateSP]
+@fieldName nvarchar(50),
+@fieldValue nvarchar(250),
+@ID int = 0
+	
+AS
+UPDATE [dbo].Machine
+SET    
+Name = CASE @fieldName WHEN 'Name' THEN @fieldValue ELSE Name END,
+Description = CASE @fieldName WHEN 'Description' THEN @fieldValue ELSE Description END,
+Price = CASE @fieldName WHEN 'Price' THEN @fieldValue ELSE Price END,
+Purchased = CASE @fieldName WHEN 'Purchased' THEN @fieldValue ELSE Purchased END,
+RecordUpdated = CASE @fieldName WHEN 'RecordUpdated' THEN @fieldValue ELSE RecordUpdated END,
+Available = CASE @fieldName WHEN 'Available' THEN @fieldValue ELSE Available END
+       WHERE MachineId = @ID
+	 
+RETURN 0
